@@ -339,6 +339,11 @@ var isAttr = makeMap(
   'target,title,type,usemap,value,width,wrap'
 );
 
+var unsafeAttrCharRE = /[>/="'\u0009\u000a\u000c\u0020]/;
+var isSSRUnsafeAttr = function (name) {
+  return unsafeAttrCharRE.test(name)
+};
+
 /* istanbul ignore next */
 var isRenderableAttr = function (name) {
   return (
@@ -429,6 +434,9 @@ function renderAttrs (node) {
   }
 
   for (var key in attrs) {
+    if (isSSRUnsafeAttr(key)) {
+      continue
+    }
     if (key === 'style') {
       // leave it to the style module
       continue
@@ -5820,6 +5828,9 @@ function renderStringList (
 function renderAttrs$1 (obj) {
   var res = '';
   for (var key in obj) {
+    if (isSSRUnsafeAttr(key)) {
+      continue
+    }
     res += renderAttr(key, obj[key]);
   }
   return res
@@ -8022,13 +8033,21 @@ TemplateRenderer.prototype.renderSync = function renderSync (content, context) {
 TemplateRenderer.prototype.renderStyles = function renderStyles (context) {
     var this$1 = this;
 
-  var cssFiles = this.clientManifest
-    ? this.clientManifest.all.filter(isCSS)
-    : [];
+  var initial = this.preloadFiles || [];
+  var async = this.getUsedAsyncFiles(context) || [];
+  var cssFiles = initial.concat(async).filter(function (ref) {
+      var file = ref.file;
+
+      return isCSS(file);
+    });
   return (
     // render links for css files
     (cssFiles.length
-      ? cssFiles.map(function (file) { return ("<link rel=\"stylesheet\" href=\"" + (this$1.publicPath) + "/" + file + "\">"); }).join('')
+      ? cssFiles.map(function (ref) {
+          var file = ref.file;
+
+          return ("<link rel=\"stylesheet\" href=\"" + (this$1.publicPath) + "/" + file + "\">");
+    }).join('')
       : '') +
     // context.styles is a getter exposed by vue-style-loader which contains
     // the inline component styles collected during SSR
@@ -8124,14 +8143,18 @@ TemplateRenderer.prototype.renderScripts = function renderScripts (context) {
     var this$1 = this;
 
   if (this.clientManifest) {
-    var initial = this.preloadFiles;
-    var async = this.getUsedAsyncFiles(context);
-    var needed = [initial[0]].concat(async || [], initial.slice(1));
-    return needed.filter(function (ref) {
+    var initial = this.preloadFiles.filter(function (ref) {
         var file = ref.file;
 
         return isJS(file);
-      }).map(function (ref) {
+      });
+    var async = (this.getUsedAsyncFiles(context) || []).filter(function (ref) {
+        var file = ref.file;
+
+        return isJS(file);
+      });
+    var needed = [initial[0]].concat(async || [], initial.slice(1));
+    return needed.map(function (ref) {
         var file = ref.file;
 
       return ("<script src=\"" + (this$1.publicPath) + "/" + file + "\" defer></script>")
