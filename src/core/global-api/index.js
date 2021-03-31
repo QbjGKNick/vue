@@ -37,9 +37,10 @@ export function initGlobalAPI (Vue: GlobalAPI) {
     warn,
     extend,
     mergeOptions,
-    defineReactive
+    defineReactive 
   }
 
+  // 静态方法 set/delete/nextTick
   Vue.set = set
   Vue.delete = del
   Vue.nextTick = nextTick

@@ -89,6 +89,7 @@ export function withMacroTask (fn: Function): Function {
 
 export function nextTick (cb?: Function, ctx?: Object) {
   let _resolve
+  // 把cb加上异步处理存入callbacks 数组中
   callbacks.push(() => {
     if (cb) {
       try {
