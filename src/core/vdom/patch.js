@@ -71,12 +71,16 @@ export function createPatchFunction (backend) {
   let i, j
   const cbs = {}
 
+  // modules 节点的属性/事件/样式的操作
+  // nodeOps 节点操作
   const { modules, nodeOps } = backend
 
   for (i = 0; i < hooks.length; ++i) {
+    // cbs['update'] = []
     cbs[hooks[i]] = []
     for (j = 0; j < modules.length; ++j) {
       if (isDef(modules[j][hooks[i]])) {
+        // cbs['update'] = [updateAttrs, updateClass, update...]
         cbs[hooks[i]].push(modules[j][hooks[i]])
       }
     }
@@ -682,8 +686,15 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // 函数柯里化，让一个函数返回一个函数
+  // createPatchFunction({ nodeOps, modules }) 传入平台相关的两个参数
+
+  // core中的createPatchFunction(backend), const { nodeOps, modules } = backend
+  // core中的方法和平台无关，传入两个参数后，可以在上面的函数中使用这两个参数
   return function patch (oldVnode, vnode, hydrating, removeOnly) {
+    // 新的 VNode 不存在
     if (isUndef(vnode)) {
+      // 老的 VNode 存在，执行 Destory 钩子函数
       if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
       return
     }
@@ -691,16 +702,23 @@ export function createPatchFunction (backend) {
     let isInitialPatch = false
     const insertedVnodeQueue = []
 
+    // 老的 VNode 不存在
     if (isUndef(oldVnode)) {
       // empty mount (likely as component), create new root element
       isInitialPatch = true
+      // 创建新的 VNode
       createElm(vnode, insertedVnodeQueue)
     } else {
+      // 新的和老的 VNode 都存在，更新
       const isRealElement = isDef(oldVnode.nodeType)
+      // 判断参数1是否是真实 DOM，不是真实 DOM
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
+        // 更新操作，diff算法
         // patch existing root node
         patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly)
       } else {
+        // 第一个参数是真实 DOM，创建 VNode
+        // 初始化
         if (isRealElement) {
           // mounting to a real element
           // check if this is server-rendered content and if we can perform
@@ -733,6 +751,7 @@ export function createPatchFunction (backend) {
         const parentElm = nodeOps.parentNode(oldElm)
 
         // create new node
+        // 创建 DOM 节点
         createElm(
           vnode,
           insertedVnodeQueue,
