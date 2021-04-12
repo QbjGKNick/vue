@@ -4,8 +4,8 @@ import { noop, extend } from 'shared/util'
 import { warn as baseWarn, tip } from 'core/util/debug'
 
 type CompiledFunctionResult = {
-  render: Function;
-  staticRenderFns: Array<Function>;
+  render: Function,
+  staticRenderFns: Array<Function>,
 };
 
 function createFunction (code, errors) {
@@ -38,16 +38,17 @@ export function createCompileToFunctionFn (compile: Function): Function {
         if (e.toString().match(/unsafe-eval|CSP/)) {
           warn(
             'It seems you are using the standalone build of Vue.js in an ' +
-            'environment with Content Security Policy that prohibits unsafe-eval. ' +
-            'The template compiler cannot work in this environment. Consider ' +
-            'relaxing the policy to allow unsafe-eval or pre-compiling your ' +
-            'templates into render functions.'
+              'environment with Content Security Policy that prohibits unsafe-eval. ' +
+              'The template compiler cannot work in this environment. Consider ' +
+              'relaxing the policy to allow unsafe-eval or pre-compiling your ' +
+              'templates into render functions.'
           )
         }
       }
     }
 
     // check cache
+    // 1. 读取缓存中的 CompiledFunctionResult 对象，如果有直接返回
     const key = options.delimiters
       ? String(options.delimiters) + template
       : template
@@ -56,6 +57,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
     }
 
     // compile
+    // 2. 把模板编译为对象（render，staticRenderFns），字符串形式的js代码
     const compiled = compile(template, options)
 
     // check compilation errors/tips
@@ -63,20 +65,22 @@ export function createCompileToFunctionFn (compile: Function): Function {
       if (compiled.errors && compiled.errors.length) {
         warn(
           `Error compiling template:\n\n${template}\n\n` +
-          compiled.errors.map(e => `- ${e}`).join('\n') + '\n',
+            compiled.errors.map((e) => `- ${e}`).join('\n') +
+            '\n',
           vm
         )
       }
       if (compiled.tips && compiled.tips.length) {
-        compiled.tips.forEach(msg => tip(msg, vm))
+        compiled.tips.forEach((msg) => tip(msg, vm))
       }
     }
 
     // turn code into functions
     const res = {}
+    // 3. 把字符串形式的js代码转换成js方法
     const fnGenErrors = []
     res.render = createFunction(compiled.render, fnGenErrors)
-    res.staticRenderFns = compiled.staticRenderFns.map(code => {
+    res.staticRenderFns = compiled.staticRenderFns.map((code) => {
       return createFunction(code, fnGenErrors)
     })
 
@@ -88,12 +92,14 @@ export function createCompileToFunctionFn (compile: Function): Function {
       if ((!compiled.errors || !compiled.errors.length) && fnGenErrors.length) {
         warn(
           `Failed to generate render function:\n\n` +
-          fnGenErrors.map(({ err, code }) => `${err.toString()} in\n\n${code}\n`).join('\n'),
+            fnGenErrors
+              .map(({ err, code }) => `${err.toString()} in\n\n${code}\n`)
+              .join('\n'),
           vm
         )
       }
     }
-
+    // 4. 缓存并返回res对象(render, staticRenderFns方法)
     return (cache[key] = res)
   }
 }

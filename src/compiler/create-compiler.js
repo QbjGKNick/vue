@@ -5,6 +5,8 @@ import { detectErrors } from './error-detector'
 import { createCompileToFunctionFn } from './to-function'
 
 export function createCompilerCreator (baseCompile: Function): Function {
+  // baseOptions 平台相关的options
+  // src/platforms/web/compiler/options.js 中定义
   return function createCompiler (baseOptions: CompilerOptions) {
     function compile (
       template: string,
@@ -20,8 +22,9 @@ export function createCompilerCreator (baseCompile: Function): Function {
       if (options) {
         // merge custom modules
         if (options.modules) {
-          finalOptions.modules =
-            (baseOptions.modules || []).concat(options.modules)
+          finalOptions.modules = (baseOptions.modules || []).concat(
+            options.modules
+          )
         }
         // merge custom directives
         if (options.directives) {
